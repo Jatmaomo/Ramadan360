@@ -15,10 +15,15 @@
         .tasbeeh-circle { width: 200px; height: 200px; border-radius: 50%; background: radial-gradient(circle, #065f46 0%, #064e3b 100%); box-shadow: 0 10px 30px rgba(6, 78, 59, 0.3); }
         .nav-btn.active { color: var(--primary); transform: translateY(-4px); }
         .nav-btn.active i { color: var(--accent); }
-        .loading-spinner { border: 2px solid #f3f3f3; border-top: 2px solid #10b981; border-radius: 50%; width: 16px; height: 16px; animation: spin 1s linear infinite; display: inline-block; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .page-section { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .checkbox-custom { width: 20px; height: 20px; border: 2px solid #10b981; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+        .checkbox-custom.checked { background-color: #10b981; }
+        .checkbox-custom.checked::after { content: '✓'; color: white; display: block; text-align: center; font-size: 14px; line-height: 18px; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #10b981; border-radius: 10px; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body class="pb-28 pt-16">
@@ -33,31 +38,30 @@
 
     <main id="app-content" class="container mx-auto max-w-2xl px-5">
         
-        <!-- HOME -->
+        <!-- HOME SECTION -->
         <section id="page-home" class="page-section space-y-6 py-4">
             <div class="glass-card rounded-3xl p-6 bg-gradient-to-br from-white to-emerald-50 border border-emerald-100">
-                <div class="flex items-center gap-2 mb-4">
-                    <span class="p-2 bg-emerald-100 rounded-lg text-emerald-600">✨</span>
-                    <h3 class="font-bold text-emerald-900">AI Spiritual Counselor</h3>
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-2">
+                        <span class="p-2 bg-emerald-100 rounded-lg text-emerald-600"><i class="fas fa-list-check"></i></span>
+                        <h3 class="font-bold text-emerald-900">Daily Spiritual Goals</h3>
+                    </div>
+                    <span id="goal-count" class="text-[10px] font-bold bg-emerald-700 text-white px-2 py-1 rounded-full">0/0</span>
                 </div>
-                <div class="space-y-3">
-                    <textarea id="ai-input" rows="2" placeholder="Ask for Ramadan guidance..." class="w-full p-3 rounded-xl border border-emerald-100 bg-white text-sm focus:ring-2 focus:ring-emerald-500 outline-none"></textarea>
-                    <button onclick="askGemini()" class="w-full py-3 bg-emerald-700 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2">
-                         <span id="btn-text">Ask AI Counselor</span>
-                         <span id="btn-loader" class="hidden loading-spinner"></span>
-                    </button>
-                    <div id="ai-response" class="hidden p-4 bg-white rounded-xl text-xs text-slate-700 border border-emerald-50 max-h-48 overflow-y-auto"></div>
+                <div id="goals-container" class="space-y-3 mb-4 max-h-48 overflow-y-auto pr-1"></div>
+                <div class="flex gap-2">
+                    <input id="goal-input" type="text" placeholder="Add a goal..." class="flex-1 p-3 rounded-xl border border-emerald-100 bg-white text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+                    <button onclick="addGoal()" class="p-3 bg-emerald-700 text-white rounded-xl active:scale-90 transition-transform"><i class="fas fa-plus"></i></button>
                 </div>
             </div>
 
-            <div class="glass-card rounded-3xl p-8 text-center border-b-4 border-amber-400">
+            <div id="quote-card" class="glass-card rounded-3xl p-8 text-center border-b-4 border-amber-400 relative overflow-hidden">
                 <h3 class="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-4">Daily Wisdom</h3>
-                <p id="quote-display" class="text-lg font-medium text-slate-700 italic mb-8">"Fasting is a shield; it will protect you from the fire."</p>
+                <p id="quote-display" class="text-lg font-medium text-slate-700 italic mb-8">"Fasting is a shield."</p>
                 <div class="flex gap-3 justify-center">
                     <button onclick="newQuote()" class="p-3 bg-slate-100 rounded-full hover:rotate-180 transition-transform"><i class="fas fa-sync-alt text-emerald-700"></i></button>
-                    <button onclick="shareToWhatsApp('wisdom')" class="px-6 py-3 bg-green-500 text-white rounded-2xl font-bold shadow-lg flex items-center gap-2 active:scale-95 transition-transform">
-                        <i class="fab fa-whatsapp"></i> Share
-                    </button>
+                    <button onclick="shareQuote()" class="px-6 py-3 bg-green-500 text-white rounded-2xl font-bold shadow-lg flex items-center gap-2 active:scale-95 transition-transform"><i class="fab fa-whatsapp"></i> WhatsApp</button>
+                    <button onclick="downloadQuote()" class="p-3 bg-emerald-100 text-emerald-700 rounded-full active:scale-95 transition-transform"><i class="fas fa-download"></i></button>
                 </div>
             </div>
 
@@ -71,480 +75,610 @@
                     <h4 class="font-bold">Daily Duas</h4>
                 </div>
             </div>
-
-            <!-- Enhanced Branding -->
-            <div class="text-center pt-8 pb-4 opacity-70">
-                <div class="flex items-center justify-center gap-2 mb-2">
-                    <div class="h-px w-8 bg-slate-300"></div>
-                    <span class="text-[10px] font-bold uppercase tracking-[0.2em]">Developing Team</span>
-                    <div class="h-px w-8 bg-slate-300"></div>
-                </div>
-                <p class="text-xs font-bold text-emerald-800">Musa Muhammed • Habzak • Olubay • Med Tech Ibrahim</p>
-                <p class="text-xs font-bold text-pink-600 mt-1"><i class="fas fa-heart"></i> Heart of Roheemah</p>
-                <p class="text-[9px] font-medium text-slate-400 mt-2 uppercase tracking-widest">Knowledge • Devotion • Excellence</p>
-            </div>
         </section>
 
-        <!-- TRACKER -->
+        <!-- TRACKER SECTION -->
         <section id="page-tracker" class="page-section hidden py-6 space-y-6">
             <div class="bg-emerald-900 text-white p-6 rounded-3xl shadow-xl">
-                <p class="text-emerald-300 text-xs font-bold tracking-widest">FASTING PROGRESS</p>
+                <p class="text-emerald-300 text-xs font-bold tracking-widest uppercase">Fasting Journey</p>
                 <h2 id="tracker-stats" class="text-4xl font-bold my-2">0/30 Days</h2>
                 <div class="w-full bg-emerald-800 h-2 rounded-full mt-4">
                     <div id="tracker-bar" class="bg-amber-400 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
                 </div>
             </div>
+
+            <div class="glass-card p-6 rounded-3xl space-y-4">
+                <h3 class="font-bold text-emerald-900 flex items-center gap-2">
+                    <i class="fas fa-pen-to-square"></i> Daily Journal
+                </h3>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <p class="text-[10px] font-bold text-slate-400 mb-1">QURAN PAGES</p>
+                        <div class="flex items-center justify-between">
+                            <span id="quran-count" class="text-lg font-bold">0</span>
+                            <div class="flex gap-1">
+                                <button onclick="updateJournal('quran', -1)" class="w-6 h-6 flex items-center justify-center bg-white border rounded text-slate-400">-</button>
+                                <button onclick="updateJournal('quran', 1)" class="w-6 h-6 flex items-center justify-center bg-emerald-700 text-white rounded shadow">+</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <p class="text-[10px] font-bold text-slate-400 mb-1">PRAYERS</p>
+                        <div class="flex items-center justify-between">
+                            <span id="salah-count" class="text-lg font-bold">0/5</span>
+                            <div class="flex gap-1">
+                                <button onclick="updateJournal('salah', -1)" class="w-6 h-6 flex items-center justify-center bg-white border rounded text-slate-400">-</button>
+                                <button onclick="updateJournal('salah', 1)" class="w-6 h-6 flex items-center justify-center bg-emerald-700 text-white rounded shadow">+</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="grid grid-cols-6 gap-3" id="days-grid"></div>
         </section>
 
-        <!-- QUIZ -->
-        <section id="page-quiz" class="page-section hidden py-6">
-            <div id="quiz-intro" class="bg-indigo-900 text-white p-10 rounded-3xl text-center space-y-6">
-                <div class="w-20 h-20 bg-indigo-800 rounded-full flex items-center justify-center mx-auto text-3xl text-amber-400">
-                    <i class="fas fa-brain"></i>
-                </div>
-                <h2 class="text-3xl font-bold">50 Question Quiz</h2>
-                <p class="text-indigo-200 text-sm">Test your knowledge of the Quran, Prophets, and Islamic History.</p>
-                <button onclick="startQuiz()" class="bg-amber-400 text-indigo-900 px-10 py-4 rounded-2xl font-bold w-full hover:bg-amber-300 transition-colors">Start Quiz</button>
-            </div>
-            <div id="quiz-game" class="hidden glass-card p-6 rounded-3xl space-y-6 border-t-8 border-indigo-500">
-                <div class="flex justify-between items-center text-[10px] font-bold uppercase text-indigo-600">
-                    <span id="quiz-progress-text">Question 1/50</span>
-                    <span id="quiz-score-live">Score: 0</span>
-                </div>
-                <div id="quiz-question" class="text-xl font-bold text-slate-800 leading-tight"></div>
-                <div id="quiz-options" class="grid gap-3"></div>
-            </div>
-            <div id="quiz-result" class="hidden text-center p-8 space-y-6 animate-bounce">
-                <h2 class="text-3xl font-bold text-emerald-800">Quiz Completed!</h2>
-                <div id="final-score" class="text-7xl font-black text-amber-500">0/50</div>
-                <p class="text-slate-500 font-medium">MashAllah! Great effort.</p>
-                <button onclick="shareToWhatsApp('quiz')" class="bg-green-500 text-white px-10 py-5 rounded-2xl font-bold w-full flex items-center justify-center gap-3">
-                    <i class="fab fa-whatsapp text-xl"></i> Share Score
-                </button>
-                <button onclick="navigateTo('home')" class="text-slate-400 text-sm font-bold uppercase">Back to Home</button>
-            </div>
-        </section>
-
-        <!-- TASBEEH -->
+        <!-- TASBEEH SECTION -->
         <section id="page-tasbeeh" class="page-section hidden py-6 text-center space-y-10">
-            <h2 class="text-2xl font-bold text-emerald-900">Digital Tasbeeh</h2>
+            <h2 class="text-2xl font-bold text-emerald-900">Digital Counter</h2>
             <div class="flex flex-col items-center">
                 <div onclick="incrementTasbeeh()" class="tasbeeh-circle mx-auto flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-transform select-none">
                     <span id="tasbeeh-count" class="text-7xl font-bold text-white">0</span>
                     <span class="text-emerald-200 text-[10px] font-bold tracking-[0.3em] mt-2 uppercase">Tap</span>
                 </div>
-                <button onclick="resetTasbeeh()" class="mt-12 text-slate-400 text-xs font-bold border-b border-slate-300 pb-1">RESET COUNTER</button>
+                <button onclick="resetTasbeeh()" class="mt-12 text-slate-400 text-xs font-bold border-b border-slate-300 pb-1 uppercase">Reset Counter</button>
             </div>
         </section>
 
-        <!-- ADHKAR -->
-        <section id="page-adhkar" class="page-section hidden py-6 space-y-4">
-            <h2 class="text-2xl font-bold text-emerald-900 px-2">Remembrance (Adhkar)</h2>
+        <!-- ADHKAR SECTION -->
+        <section id="page-adhkar" class="page-section hidden py-6 space-y-6">
+            <h2 class="text-2xl font-bold text-emerald-900 px-2">Daily Adhkar</h2>
+            <div id="adhkar-tabs" class="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+                <button onclick="filterAdhkar('Morning')" id="tab-Morning" class="whitespace-nowrap px-6 py-2 bg-emerald-800 text-white rounded-full text-xs font-bold transition-colors">Morning</button>
+                <button onclick="filterAdhkar('Evening')" id="tab-Evening" class="whitespace-nowrap px-6 py-2 bg-emerald-100 text-emerald-800 rounded-full text-xs font-bold transition-colors">Evening</button>
+                <button onclick="filterAdhkar('Sleep')" id="tab-Sleep" class="whitespace-nowrap px-6 py-2 bg-emerald-100 text-emerald-800 rounded-full text-xs font-bold transition-colors">Sleep</button>
+                <button onclick="filterAdhkar('General')" id="tab-General" class="whitespace-nowrap px-6 py-2 bg-emerald-100 text-emerald-800 rounded-full text-xs font-bold transition-colors">General</button>
+            </div>
             <div id="adhkar-list" class="space-y-4"></div>
         </section>
 
-        <!-- NAMES -->
+        <!-- NAMES OF ALLAH SECTION -->
         <section id="page-names" class="page-section hidden py-6 space-y-6">
-            <h2 class="text-2xl font-bold text-emerald-900 px-2">99 Names of Allah</h2>
-            <div id="names-grid" class="grid grid-cols-2 gap-3"></div>
+            <h2 class="text-2xl font-bold text-emerald-900 px-2 text-center">99 Names of Allah</h2>
+            <div id="names-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
         </section>
 
-        <!-- STORIES -->
+        <!-- QUIZ SECTION -->
+        <section id="page-quiz" class="page-section hidden py-6">
+            <div id="quiz-intro" class="bg-indigo-900 text-white p-10 rounded-3xl text-center space-y-6">
+                <div class="w-20 h-20 bg-indigo-800 rounded-full flex items-center justify-center mx-auto text-3xl text-amber-400">
+                    <i class="fas fa-brain"></i>
+                </div>
+                <h2 class="text-3xl font-bold">50-Question Challenge</h2>
+                <button onclick="startQuiz()" class="bg-amber-400 text-indigo-900 px-10 py-4 rounded-2xl font-bold w-full active:scale-95 transition-transform">Start Marathon</button>
+            </div>
+            <div id="quiz-game" class="hidden glass-card p-6 rounded-3xl space-y-6">
+                <div class="flex justify-between items-center text-[10px] font-bold uppercase text-indigo-600">
+                    <span id="quiz-progress-text">Question 1/50</span>
+                    <span id="quiz-score-live">Score: 0</span>
+                </div>
+                <div id="quiz-question" class="text-lg font-bold text-slate-800 min-h-[60px]"></div>
+                <div id="quiz-options" class="grid gap-3"></div>
+            </div>
+            <div id="quiz-result" class="hidden glass-card p-10 rounded-3xl text-center space-y-6">
+                <h2 class="text-3xl font-bold text-indigo-900">Quiz Completed!</h2>
+                <p id="quiz-final-score" class="text-5xl font-black text-amber-500">0/50</p>
+                <button onclick="startQuiz()" class="bg-indigo-900 text-white px-8 py-3 rounded-xl font-bold">Try Again</button>
+            </div>
+        </section>
+
+        <!-- ABOUT SECTION -->
+        <section id="page-about" class="page-section hidden py-6 space-y-6">
+            <div class="text-center space-y-2">
+                <h2 class="text-3xl font-bold text-emerald-900">About the App</h2>
+                <p class="text-sm text-slate-500 max-w-md mx-auto">Ramadan 360 Ultimate is designed to provide a comprehensive spiritual toolkit for Muslims worldwide, helping track devotions and expand knowledge.</p>
+            </div>
+
+            <div class="space-y-4">
+                <h3 class="text-lg font-bold text-emerald-800 px-2 flex items-center gap-2">
+                    <i class="fas fa-code"></i> The Developer
+                </h3>
+                <div class="glass-card p-6 rounded-3xl border-l-4 border-emerald-600">
+                    <h4 class="font-bold text-slate-800">Jat Maomo Tech</h4>
+                    <p class="text-xs text-slate-600 mt-2 leading-relaxed">The lead developer behind the architecture of Ramadan 360. Specializing in high-performance web solutions and intuitive user interfaces, Jat Maomo Tech ensured the app remains seamless and accessible for all users during the holy month.</p>
+                </div>
+
+                <h3 class="text-lg font-bold text-emerald-800 px-2 flex items-center gap-2 mt-6">
+                    <i class="fas fa-lightbulb"></i> The Visionaries (Idea & Logic)
+                </h3>
+                <div class="grid gap-4">
+                    <div class="glass-card p-5 rounded-3xl border-l-4 border-amber-500">
+                        <h4 class="font-bold text-slate-800">Habzak Nuro Tech</h4>
+                        <p class="text-xs text-slate-600 mt-2">A creative strategist who conceptualized the core features. Habzak Nuro Tech focused on bridging technology with traditional Islamic practices to create a modern digital companion.</p>
+                    </div>
+                    <div class="glass-card p-5 rounded-3xl border-l-4 border-blue-500">
+                        <h4 class="font-bold text-slate-800">Olubaymedtech</h4>
+                        <p class="text-xs text-slate-600 mt-2">Instrumental in defining the app's utility and health tracking features, ensuring that the fasting journey is both spiritually rewarding and physically mindful.</p>
+                    </div>
+                    <div class="glass-card p-5 rounded-3xl border-l-4 border-purple-500">
+                        <h4 class="font-bold text-slate-800">Ibrahim</h4>
+                        <p class="text-xs text-slate-600 mt-2">The logistical pillar who organized the content strategy, ensuring that every story and dua included is authentic and provides value to the user.</p>
+                    </div>
+                </div>
+
+                <h3 class="text-lg font-bold text-emerald-800 px-2 flex items-center gap-2 mt-6">
+                    <i class="fas fa-heart text-red-500"></i> The Inspiration
+                </h3>
+                <div class="glass-card p-6 rounded-3xl bg-red-50/50 border-l-4 border-red-500">
+                    <h4 class="font-bold text-slate-800">Heart of Roheemah</h4>
+                    <p class="text-xs text-slate-600 mt-2 italic leading-relaxed">The spiritual heartbeat of this project. The "Heart of Roheemah" represents the compassion and mercy that this app aims to foster in every user's life during and after Ramadan.</p>
+                </div>
+            </div>
+
+            <div class="pt-8 text-center text-[10px] text-slate-400 font-medium">
+                © 2026 Ramadan 360 Ultimate Team. All rights reserved.
+            </div>
+        </section>
+
+        <!-- STORIES SECTION -->
         <section id="page-stories" class="page-section hidden py-6 space-y-6">
             <h2 class="text-2xl font-bold text-emerald-900 px-2">Prophet Stories</h2>
-            <div id="stories-list" class="space-y-4"></div>
+            <div id="stories-list" class="space-y-6 pb-12"></div>
         </section>
 
-        <!-- PRAYERS -->
-        <section id="page-prayers" class="page-section hidden py-6 space-y-6">
+        <!-- DUA SECTION -->
+        <section id="page-prayers" class="page-section hidden py-6 space-y-4">
             <h2 class="text-2xl font-bold text-emerald-900 px-2">Essential Duas</h2>
             <div id="prayers-list" class="space-y-4"></div>
         </section>
 
     </main>
 
-    <nav class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-100 flex justify-around items-center py-4 z-50">
-        <button onclick="navigateTo('home')" class="nav-btn active flex flex-col items-center gap-1"><i class="fas fa-house"></i><span class="text-[8px] font-bold">HOME</span></button>
-        <button onclick="navigateTo('tracker')" class="nav-btn flex flex-col items-center gap-1 text-slate-400"><i class="fas fa-calendar"></i><span class="text-[8px] font-bold">TRACK</span></button>
-        <button onclick="navigateTo('tasbeeh')" class="nav-btn flex flex-col items-center gap-1 text-slate-400"><i class="fas fa-circle-notch"></i><span class="text-[8px] font-bold">TASBEEH</span></button>
-        <button onclick="navigateTo('adhkar')" class="nav-btn flex flex-col items-center gap-1 text-slate-400"><i class="fas fa-heart"></i><span class="text-[8px] font-bold">ADHKAR</span></button>
-        <button onclick="navigateTo('names')" class="nav-btn flex flex-col items-center gap-1 text-slate-400"><i class="fas fa-star"></i><span class="text-[8px] font-bold">NAMES</span></button>
-        <button onclick="navigateTo('quiz')" class="nav-btn flex flex-col items-center gap-1 text-slate-400"><i class="fas fa-brain"></i><span class="text-[8px] font-bold">QUIZ</span></button>
+    <nav class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-100 flex justify-around items-center py-4 z-50 overflow-x-auto no-scrollbar px-2">
+        <button onclick="navigateTo('home')" class="nav-btn active flex flex-col items-center gap-1 min-w-[50px]"><i class="fas fa-house"></i><span class="text-[8px] font-bold">HOME</span></button>
+        <button onclick="navigateTo('tracker')" class="nav-btn flex flex-col items-center gap-1 text-slate-400 min-w-[50px]"><i class="fas fa-calendar"></i><span class="text-[8px] font-bold">TRACK</span></button>
+        <button onclick="navigateTo('tasbeeh')" class="nav-btn flex flex-col items-center gap-1 text-slate-400 min-w-[50px]"><i class="fas fa-circle-notch"></i><span class="text-[8px] font-bold">TASBEEH</span></button>
+        <button onclick="navigateTo('adhkar')" class="nav-btn flex flex-col items-center gap-1 text-slate-400 min-w-[50px]"><i class="fas fa-heart"></i><span class="text-[8px] font-bold">ADHKAR</span></button>
+        <button onclick="navigateTo('names')" class="nav-btn flex flex-col items-center gap-1 text-slate-400 min-w-[50px]"><i class="fas fa-star"></i><span class="text-[8px] font-bold">NAMES</span></button>
+        <button onclick="navigateTo('quiz')" class="nav-btn flex flex-col items-center gap-1 text-slate-400 min-w-[50px]"><i class="fas fa-brain"></i><span class="text-[8px] font-bold">QUIZ</span></button>
+        <button onclick="navigateTo('about')" class="nav-btn flex flex-col items-center gap-1 text-slate-400 min-w-[50px]"><i class="fas fa-info-circle"></i><span class="text-[8px] font-bold">ABOUT</span></button>
     </nav>
 
     <script>
-        const apiKey = "";
-        const modelName = "gemini-2.5-flash-preview-09-2025";
-
-        const names99 = [
-            { a: "Allah", e: "The Greatest Name" }, { a: "Ar-Rahman", e: "The Most Gracious" },
-            { a: "Ar-Raheem", e: "The Most Merciful" }, { a: "Al-Malik", e: "The King" },
-            { a: "Al-Quddus", e: "The Most Holy" }, { a: "As-Salam", e: "The Source of Peace" },
-            { a: "Al-Mu'min", e: "The Giver of Faith" }, { a: "Al-Muhaymin", e: "The Guardian" },
-            { a: "Al-Aziz", e: "The Almighty" }, { a: "Al-Jabbar", e: "The Compeller" },
-            { a: "Al-Mutakabbir", e: "The Supreme" }, { a: "Al-Khaliq", e: "The Creator" },
-            { a: "Al-Bari", e: "The Evolver" }, { a: "Al-Musawwir", e: "The Fashioner" },
-            { a: "Al-Ghaffar", e: "The Forgiver" }, { a: "Al-Qahhar", e: "The Subduer" },
-            { a: "Al-Wahhab", e: "The Bestower" }, { a: "Ar-Razzaq", e: "The Provider" },
-            { a: "Al-Fattah", e: "The Opener" }, { a: "Al-Alim", e: "The All-Knowing" },
-            { a: "Al-Qabid", e: "The Withholder" }, { a: "Al-Basit", e: "The Expander" },
-            { a: "Al-Khafid", e: "The Abaser" }, { a: "Ar-Rafi", e: "The Exalter" },
-            { a: "Al-Mu'izz", e: "The Bestower of Honor" }, { a: "Al-Mudhill", e: "The Humiliator" },
-            { a: "As-Sami", e: "The All-Hearing" }, { a: "Al-Basir", e: "The All-Seeing" },
-            { a: "Al-Hakam", e: "The Judge" }, { a: "Al-Adl", e: "The Utterly Just" },
-            { a: "Al-Latif", e: "The Gentle" }, { a: "Al-Khabir", e: "The All-Aware" },
-            { a: "Al-Halim", e: "The Forbearing" }, { a: "Al-Azim", e: "The Magnificent" },
-            { a: "Al-Ghafur", e: "The Forgiving" }, { a: "Ash-Shakur", e: "The Appreciative" },
-            { a: "Al-Ali", e: "The Most High" }, { a: "Al-Kabir", e: "The Most Great" },
-            { a: "Al-Hafiz", e: "The Preserver" }, { a: "Al-Muqit", e: "The Nourisher" },
-            { a: "Al-Hasib", e: "The Accounter" }, { a: "Al-Jalil", e: "The Majestic" },
-            { a: "Al-Karim", e: "The Generous" }, { a: "Ar-Raqib", e: "The Watchful" },
-            { a: "Al-Mujib", e: "The Responsive" }, { a: "Al-Wasi", e: "The All-Pervading" },
-            { a: "Al-Hakim", e: "The Wise" }, { a: "Al-Wadud", e: "The Loving" },
-            { a: "Al-Majid", e: "The Glorious" }, { a: "Al-Ba'ith", e: "The Resurrector" },
-            { a: "Ash-Shahid", e: "The Witness" }, { a: "Al-Haqq", e: "The Truth" },
-            { a: "Al-Wakil", e: "The Trustee" }, { a: "Al-Qawi", e: "The Strong" },
-            { a: "Al-Matin", e: "The Firm One" }, { a: "Al-Wali", e: "The Friend" },
-            { a: "Al-Hamid", e: "The Praiseworthy" }, { a: "Al-Muhsi", e: "The Counter" },
-            { a: "Al-Mubdi", e: "The Originator" }, { a: "Al-Mu'id", e: "The Restorer" },
-            { a: "Al-Muhyi", e: "The Giver of Life" }, { a: "Al-Mumit", e: "The Bringer of Death" },
-            { a: "Al-Hayy", e: "The Living" }, { a: "Al-Qayyum", e: "The Subsisting" },
-            { a: "Al-Wajid", e: "The Perceiver" }, { a: "Al-Majid", e: "The Illustrious" },
-            { a: "Al-Wahid", e: "The One" }, { a: "Al-Ahad", e: "The Unique" },
-            { a: "As-Samad", e: "The Eternal" }, { a: "Al-Qadir", e: "The Able" },
-            { a: "Al-Muqtadir", e: "The Powerful" }, { a: "Al-Muqaddim", e: "The Expediter" },
-            { a: "Al-Mu'akhkhir", e: "The Delayer" }, { a: "Al-Awwal", e: "The First" },
-            { a: "Al-Akhir", e: "The Last" }, { a: "Az-Zahir", e: "The Manifest" },
-            { a: "Al-Batin", e: "The Hidden" }, { a: "Al-Wali", e: "The Patron" },
-            { a: "Al-Muta'ali", e: "The Most Exalted" }, { a: "Al-Barr", e: "The Source of Good" },
-            { a: "At-Tawwab", e: "The Relenting" }, { a: "Al-Muntaqim", e: "The Avenger" },
-            { a: "Al-Afu", e: "The Pardoner" }, { a: "Ar-Ra'uf", e: "The Compassionate" },
-            { a: "Malik-ul-Mulk", e: "The Owner of Sovereignty" }, { a: "Dhul-Jalal-wal-Ikram", e: "Lord of Majesty and Bounty" },
-            { a: "Al-Muqsit", e: "The Equitable" }, { a: "Al-Jami", e: "The Gatherer" },
-            { a: "Al-Ghani", e: "The Self-Sufficient" }, { a: "Al-Mughni", e: "The Enricher" },
-            { a: "Al-Mani", e: "The Preventer" }, { a: "Ad-Darr", e: "The Distresser" },
-            { a: "An-Nafi", e: "The Propitious" }, { a: "An-Nur", e: "The Light" },
-            { a: "Al-Hadi", e: "The Guide" }, { a: "Al-Badi", e: "The Incomparable" },
-            { a: "Al-Baqi", e: "The Everlasting" }, { a: "Al-Warith", e: "The Heir" },
-            { a: "Ar-Rashid", e: "The Guide to Right Path" }, { a: "As-Sabur", e: "The Patient" }
-        ];
-
-        const adhkarData = [
-            { a: "سُبْحَانَ اللهِ", e: "SubhanAllah", m: "Glory be to Allah (33x)" },
-            { a: "الْحَمْدُ للهِ", e: "Alhamdulillah", m: "Praise be to Allah (33x)" },
-            { a: "اللهُ أَكْبَرُ", e: "Allahu Akbar", m: "Allah is the Greatest (33x)" },
-            { a: "أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّهِ", e: "Asbahna wa asbahal mulku lillah", m: "We have reached the morning and the sovereignty belongs to Allah" },
-            { a: "أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلَّهِ", e: "Amsayna wa amsal mulku lillah", m: "We have reached the evening and the sovereignty belongs to Allah" },
-            { a: "لَا إِلٰهَ إِلَّا اللهُ وَحْدَهُ لَا شَرِيكَ لَهُ", e: "La ilaha illallah wahdahu...", m: "There is no god but Allah alone, He has no partner" },
-            { a: "سُبْحَانَ اللهِ وَبِحَمْدِهِ ، سُبْحَانَ اللهِ الْعَظِيمِ", e: "SubhanAllahi wa bihamdihi...", m: "Glory and praise be to Allah, Glory be to Allah the Supreme" },
-            { a: "اللَّهُمَّ صَلِّ وَسَلِّمْ عَلَى نَبِيِّنَا مُحَمَّدٍ", e: "Allahumma salli wa sallim...", m: "O Allah, send prayers and peace upon our Prophet Muhammad (10x)" },
-            { a: "بِسْمِ اللهِ الَّذِي لَا يَضُرُّ مَعَ اسْمِهِ شَيْءٌ", e: "Bismillahi-lladhi la yadurru...", m: "In the name of Allah, with whose name nothing can cause harm" },
-            { a: "أَعُوذُ بِكَلِمَاتِ اللهِ التَّامَّاتِ مِنْ شَرِّ مَا خَلَقَ", e: "A'udhu bikalimatillahi-tammati...", m: "I seek refuge in the perfect words of Allah from the evil of what He has created" },
-            { a: "يَا حَيُّ يَا قَيُّومُ بِرَحْمَتِكَ أَسْتَغِيثُ", e: "Ya Hayyu Ya Qayyum...", m: "O Ever Living, O Self-Subsisting, by Your mercy I seek help" },
-            { a: "حَسْبِيَ اللهُ لَا إِلٰهَ إِلَّا هُوَ عَلَيْهِ تَوَكَّلْتُ", e: "Hasbiyallahu la ilaha illa Hu...", m: "Allah is sufficient for me; there is no god but He. In Him I trust" },
-            { a: "أَسْتَغْفِرُ اللهَ وَأَتُوبُ إِلَيْهِ", e: "Astaghfirullaha wa atubu ilayh", m: "I seek Allah's forgiveness and turn to Him in repentance (100x)" },
-            { a: "رَضِيتُ بِاللهِ رَبًّا وَبِالْإِسْلَامِ دِينًا", e: "Raditu billahi Rabban...", m: "I am pleased with Allah as my Lord, Islam as my religion" }
-        ];
-
-        const storiesData = [
-            { t: "Prophet Adam (AS)", c: "The first human and Prophet created by Allah from clay, taught the names of all things." },
-            { t: "Prophet Nuh (AS)", c: "Called his people to Tawhid for 950 years and built the Great Ark to save the believers." },
-            { t: "Prophet Ibrahim (AS)", c: "The Friend of Allah who stood against idolatry and built the Kaaba with Ismail (AS)." },
-            { t: "Prophet Musa (AS)", c: "Spoke to Allah directly, split the Red Sea, and led Bani Isra'il out of tyranny." },
-            { t: "Prophet Yusuf (AS)", c: "Known for his beauty and dreams, sold into slavery but rose to be the treasurer of Egypt." },
-            { t: "Prophet Muhammad (SAW)", c: "The final Messenger, recipient of the Quran, and a mercy for all mankind." }
-        ];
-
-        const prayersData = [
-            { t: "Iftar Dua", a: "ذَهَبَ الظَّمَأُ وَابْتَلَّتِ الْعُرُوقُ وَثَبَتَ الأَجْرُ إِنْ شَاءَ اللَّهُ", e: "Dhahaba-zama’u wab-tallatil ‘uruuqu, wa thabatal ajru in sha Allah", m: "Thirst is gone, the veins are wetted, and the reward is confirmed, if Allah wills." },
-            { t: "Opening Fast", a: "وَبِصَوْمِ غَدٍ نَّوَيْتُ مِنْ شَهْرِ رَمَضَانَ", e: "Wa bisawmi ghadinn nawaiytu min shahri ramadan", m: "I intend to keep the fast for tomorrow in the month of Ramadan." },
-            { t: "Before Sleeping", a: "بِاسْمِكَ اللَّهُمَّ أَمُوتُ وَأَحْيَا", e: "Bismika Allahumma amutu wa ahya", m: "In Your name, O Allah, I die and I live." },
-            { t: "Waking Up", a: "الْحَمْدُ لِلَّهِ الَّذِي أَحْيَانَا بَعْدَ مَا أَمَاتَنَا وَإِلَيْهِ النُّشُورُ", e: "Alhamdu lillahil-ladhi ahyana...", m: "Praise be to Allah who gave us life after He caused us to die and to Him is the resurrection." }
-        ];
-
-        const quotes = [
-            "Fasting is a shield; it will protect you from the fire.",
-            "Ramadan is the month whose beginning is mercy, its middle is forgiveness and its end is freedom from the fire.",
-            "He who gives iftar to another fasting person shall fully earn the same reward.",
+        // EXPANDED DATA: 30 SPIRITUAL QUOTES
+        const spiritualQuotes = [
+            "Fasting is a shield.",
+            "Charity does not decrease wealth.",
+            "The best of you are those who learn the Quran.",
+            "Verily with hardship comes ease.",
+            "A good word is charity.",
+            "He who shows the way to something good has the same reward as the doer.",
+            "Allah does not look at your appearance or wealth, but at your heart and deeds.",
+            "The most beloved of deeds to Allah are those that are most consistent, even if they are small.",
+            "Be in this world as if you were a stranger or a traveler.",
+            "Modesty is part of faith.",
+            "Speak good or remain silent.",
+            "The upper hand is better than the lower hand (giving is better than receiving).",
+            "Patience is illumination.",
+            "Take benefit of five before five: youth before old age, health before sickness, wealth before poverty, free time before being busy, and life before death.",
+            "A Muslim is one from whose tongue and hand other Muslims are safe.",
+            "Kindness is not found in anything except that it beautifies it.",
+            "The strongest among you is not the one who can wrestle, but the one who can control his anger.",
+            "Allah is kind and He loves kindness in all things.",
+            "Do not waste water, even if you were at a running stream.",
+            "The world is a prison for the believer and a paradise for the disbeliever.",
+            "Ramadan is the month whose beginning is mercy, whose middle is forgiveness and whose end is freedom from fire.",
+            "When the month of Ramadan starts, the gates of heaven are opened.",
+            "Fasting is not just abstaining from food and drink, but also from vanity and idle talk.",
+            "The smell of the mouth of a fasting person is more pleasant to Allah than the scent of musk.",
+            "Whoever fasts Ramadan out of faith and in the hope of reward, his previous sins will be forgiven.",
+            "There are two joys for the fasting person: one when he breaks his fast, and one when he meets his Lord.",
+            "Supplications made at the time of breaking the fast are never rejected.",
+            "He is not a believer who fills his stomach while his neighbor is hungry.",
             "The best charity is that given in Ramadan.",
-            "The smell of the mouth of a fasting person is better to Allah than the scent of musk.",
-            "Fasting is not just abstaining from food; it is abstaining from foul talk and anger.",
-            "Ramadan is a time to detach from the world and attach to Allah.",
-            "The Quran was revealed in this month as a guidance for all people.",
-            "Laylatul Qadr is better than a thousand months.",
-            "Whoever fasts Ramadan out of faith and seeking reward, his past sins will be forgiven.",
-            "Take Suhoor, for in Suhoor there is blessing.",
-            "A fasting person has at the time of breaking his fast a prayer which is not rejected.",
-            "Ramadan is the spring of the soul.",
-            "Let your fast be seen in your character, not just your hunger.",
-            "When Ramadan begins, the gates of Paradise are opened and the gates of Hell are closed.",
-            "Ramadan is a bootcamp for the soul to gain Taqwa.",
-            "Be like a rain-bearing cloud; generous and beneficial in this holy month.",
-            "Prayer is the key to all success; keep it strong in Ramadan.",
-            "The heart that remembers Allah is never lonely.",
-            "Kindness is a mark of faith, and whoever has no kindness has no faith.",
-            "Allah does not look at your appearance, but at your hearts and deeds.",
-            "Patience is half of faith, and fasting is half of patience.",
-            "Seek knowledge from the cradle to the grave.",
-            "The best of people are those who are most beneficial to others.",
-            "Ramadan is about changing your heart, not just your schedule.",
-            "Every act of goodness is a charity.",
-            "Control your tongue as much as you control your stomach.",
-            "Gratitude turns what we have into enough.",
-            "Turn to Allah before you return to Allah.",
-            "The goal of Ramadan is to become a better version of yourself for the rest of the year."
+            "Verily, Allah loves those who are constantly repentant and loves those who purify themselves."
         ];
 
-        const fullQuizData = [
+        // DATA: ALL 99 NAMES
+        const namesOfAllah = [
+            { a: "ٱلله", e: "Allah", m: "The Greatest Name" }, { a: "ٱلرَّحْمَن", e: "Ar-Rahman", m: "The Beneficent" },
+            { a: "ٱلرَّحِيم", e: "Ar-Raheem", m: "The Merciful" }, { a: "ٱلْمَلِك", e: "Al-Malik", m: "The King" },
+            { a: "ٱلْقُدُّوس", e: "Al-Quddus", m: "The Most Holy" }, { a: "ٱلسَّلَام", e: "As-Salam", m: "The Source of Peace" },
+            { a: "ٱلْمُؤْمِن", e: "Al-Mu'min", m: "The Giver of Faith" }, { a: "ٱلْمُهَيْمِن", e: "Al-Muhaymin", m: "The Guardian" },
+            { a: "ٱلْعَزِيز", e: "Al-Aziz", m: "The Almighty" }, { a: "ٱلْجَبَّار", e: "Al-Jabbar", m: "The Compeller" },
+            { a: "ٱلْمُتَكَبِّر", e: "Al-Mutakabbir", m: "The Supreme" }, { a: "ٱلْخَالِق", e: "Al-Khaliq", m: "The Creator" },
+            { a: "ٱلْبَارِئ", e: "Al-Bari", m: "The Evolver" }, { a: "ٱلْمُصَوِّر", e: "Al-Musawwir", m: "The Fashioner" },
+            { a: "ٱلْغَفَّار", e: "Al-Ghaffar", m: "The Forgiver" }, { a: "ٱلْقَهَّار", e: "Al-Qahhar", m: "The Subduer" },
+            { a: "ٱلْوَهَّاب", e: "Al-Wahhab", m: "The Bestower" }, { a: "ٱلرَّزَّاق", e: "Ar-Razzaq", m: "The Provider" },
+            { a: "ٱلْفَتَّاح", e: "Al-Fattah", m: "The Opener" }, { a: "ٱلْعَلِيم", e: "Al-Alim", m: "The All-Knowing" },
+            { a: "ٱلْقَابِض", e: "Al-Qabid", m: "The Retainer" }, { a: "ٱلْبَاسِط", e: "Al-Basit", m: "The Expander" },
+            { a: "ٱلْخَافِض", e: "Al-Khafid", m: "The Abaser" }, { a: "ٱلرَّافِع", e: "Ar-Rafi", m: "The Exalter" },
+            { a: "ٱلْمُعِزّ", e: "Al-Mu'izz", m: "The Giver of Honor" }, { a: "ٱلْمُذِلّ", e: "Al-Mudhill", m: "The Giver of Dishonor" },
+            { a: "ٱلسَّمِيع", e: "As-Sami", m: "The All-Hearing" }, { a: "ٱلْبَصِير", e: "Al-Basir", m: "The All-Seeing" },
+            { a: "ٱلْحكَم", e: "Al-Hakam", m: "The Judge" }, { a: "ٱلْعَدْل", e: "Al-Adl", m: "The Just" },
+            { a: "ٱللَّطِيف", e: "Al-Latif", m: "The Subtle One" }, { a: "ٱلْخَبِير", e: "Al-Khabir", m: "The All-Aware" },
+            { a: "ٱلْحَلِيم", e: "Al-Halim", m: "The Forbearing" }, { a: "ٱلْعَظِيم", e: "Al-Azim", m: "The Magnificent" },
+            { a: "ٱلْغَفُور", e: "Al-Ghafur", m: "The Forgiving" }, { a: "ٱلشَّكُور", e: "Ash-Shakur", m: "The Appreciative" },
+            { a: "ٱلْعَلِيّ", e: "Al-Ali", m: "The Most High" }, { a: "ٱلْكَبِير", e: "Al-Kabir", m: "The Most Great" },
+            { a: "ٱلْحَفِيظ", e: "Al-Hafiz", m: "The Preserver" }, { a: "ٱلْمُقِيت", e: "Al-Muqit", m: "The Sustainer" },
+            { a: "ٱلْحَسِيب", e: "Al-Hasib", m: "The Reckoner" }, { a: "ٱلْجَلِيل", e: "Al-Jalil", m: "The Sublime" },
+            { a: "ٱلْكَرِيم", e: "Al-Karim", m: "The Generous" }, { a: "ٱلرَّقِيب", e: "Ar-Raqib", m: "The Watchful" },
+            { a: "ٱلْمُجِيب", e: "Al-Mujib", m: "The Responsive" }, { a: "ٱلْوَاسِع", e: "Al-Wasi", m: "The All-Pervading" },
+            { a: "ٱلْحكيم", e: "Al-Hakim", m: "The Wise" }, { a: "ٱلْوَدُود", e: "Al-Wadud", m: "The Loving" },
+            { a: "ٱلْمَجِيد", e: "Al-Majid", m: "The Glorious" }, { a: "ٱلْبَاعِث", e: "Al-Ba'ith", m: "The Resurrector" },
+            { a: "ٱلشَّهِيد", e: "Ash-Shahid", m: "The Witness" }, { a: "ٱلْحَقّ", e: "Al-Haqq", m: "The Truth" },
+            { a: "ٱلْوَكِيل", e: "Al-Wakil", m: "The Trustee" }, { a: "ٱلْقَوِيّ", e: "Al-Qawiy", m: "The Strong" },
+            { a: "ٱلْمَتِين", e: "Al-Matin", m: "The Firm One" }, { a: "ٱلْوَلِيّ", e: "Al-Waliy", m: "The Protecting Friend" },
+            { a: "ٱلْحَمِيد", e: "Al-Hamid", m: "The Praiseworthy" }, { a: "ٱلْمُحْصِي", e: "Al-Muhsi", m: "The Reckoner" },
+            { a: "ٱلْمُبْدِئ", e: "Al-Mubdi", m: "The Originator" }, { a: "ٱلْمُعِيد", e: "Al-Mu'id", m: "The Restorer" },
+            { a: "ٱلْمُحْيِي", e: "Al-Muhyi", m: "The Giver of Life" }, { a: "ٱلْمُمِيت", e: "Al-Mumit", m: "The Bringer of Death" },
+            { a: "ٱلْحَيّ", e: "Al-Hayy", m: "The Ever Living" }, { a: "ٱلْقَيُّوم", e: "Al-Qayyum", m: "The Self-Subsisting" },
+            { a: "ٱلْوَاجِد", e: "Al-Wajid", m: "The Perceiver" }, { a: "ٱلْمَاجِد", e: "Al-Majid", m: "The Noble" },
+            { a: "ٱلْوَاحِد", e: "Al-Wahid", m: "The Unique" }, { a: "ٱلأَحَد", e: "Al-Ahad", m: "The One" },
+            { a: "ٱلصَّمَد", e: "As-Samad", m: "The Eternal" }, { a: "ٱلْقَادِر", e: "Al-Qadir", m: "The Able" },
+            { a: "ٱلْمُقْتَدِر", e: "Al-Muqtadir", m: "The Powerful" }, { a: "ٱلْمُقَدِّم", e: "Al-Muqaddim", m: "The Expediter" },
+            { a: "ٱلْمُؤَخِّر", e: "Al-Mu'akhkhir", m: "The Delayer" }, { a: "ٱلأَحَد", e: "Al-Ahad", m: "The One" },
+            { a: "ٱلأَوَّل", e: "Al-Awwal", m: "The First" }, { a: "ٱلآخِر", e: "Al-Akhir", m: "The Last" },
+            { a: "ٱلظَّاهِر", e: "Az-Zahir", m: "The Manifest" }, { a: "ٱلْبَاطِن", e: "Al-Batin", m: "The Hidden" },
+            { a: "ٱلْوَالِي", e: "Al-Wali", m: "The Governor" }, { a: "ٱلْمُتَعَالِي", e: "Al-Muta'ali", m: "The Most Exalted" },
+            { a: "ٱلْبَرّ", e: "Al-Barr", m: "The Source of Goodness" }, { a: "ٱلتَّوَّاب", e: "At-Tawwab", m: "The Acceptor of Repentance" },
+            { a: "ٱلْمُنْتَقِم", e: "Al-Muntaqim", m: "The Avenger" }, { a: "ٱلْعَفُوّ", e: "Al-Afu", m: "The Pardoner" },
+            { a: "ٱلرَّؤُوف", e: "Ar-Ra'uf", m: "The Compassionate" }, { a: "مَالِكُ ٱلْمُلْكِ", e: "Malik-al-Mulk", m: "The Owner of All" },
+            { a: "ذُو ٱلْجَلَالِ وَٱلإِكْرَامِ", e: "Dhul-Jalal wal-Ikram", m: "Lord of Majesty and Generosity" },
+            { a: "ٱلْمُقْسِط", e: "Al-Muqsit", m: "The Equitable" }, { a: "ٱلْجَامِع", e: "Al-Jami", m: "The Gatherer" },
+            { a: "ٱلْغَنِيّ", e: "Al-Ghani", m: "The Self-Sufficient" }, { a: "ٱلْمُغْنِي", e: "Al-Mughni", m: "The Enricher" },
+            { a: "ٱلْمَانِع", e: "Al-Mani", m: "The Preventer" }, { a: "ٱلضَّارّ", e: "Ad-Darr", m: "The Distressor" },
+            { a: "ٱلنَّافِع", e: "An-Nafi", m: "The Propitious" }, { a: "ٱلنُّور", e: "An-Nur", m: "The Light" },
+            { a: "ٱلْهَادِي", e: "Al-Hadi", m: "The Guide" }, { a: "ٱلْبَدِيع", e: "Al-Badi", m: "The Incomparable" },
+            { a: "ٱلْبَاقِي", e: "Al-Baqi", m: "The Everlasting" }, { a: "ٱلْوَارِث", e: "Al-Warith", m: "The Ultimate Inheritor" },
+            { a: "ٱلرَّشِيد", e: "Ar-Rashid", m: "The Guide to Path" }, { a: "ٱلصَّبُور", e: "As-Sabur", m: "The Patient" }
+        ];
+
+        // ADHKAR DATA
+        const adhkarData = [
+            { t: "Morning", a: "أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ، لَا إِلَهَ إِلَّا اللهُ وَحْدَهُ لَا شَرِيكَ لَهُ", e: "Morning entry...", c: 1 },
+            { t: "Morning", a: "سُبْحَانَ اللهِ وَبِحَمْدِهِ: عَدَدَ خَلْقِهِ، وَرِضَا نَفْسِهِ، وَزِنَةَ عَرْشِهِ", e: "Glory to Allah...", c: 3 },
+            { t: "Morning", a: "اللَّهُمَّ إِنِّي أَسْأَلُكَ عِلْمًا نَافِعًا، وَرِزْقًا طَيِّبًا، وَعَمَلًا مُتَقَبَّلًا", e: "O Allah, I ask for useful knowledge...", c: 1 },
+            { t: "Evening", a: "أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ", e: "Evening entry...", c: 1 },
+            { t: "Evening", a: "أَعُوذُ بِكَلِمَاتِ اللهِ التَّامَّاتِ مِنْ شَرِّ مَا خَلَقَ", e: "Protection from evil...", c: 3 },
+            { t: "Evening", a: "اللَّهُمَّ بِكَ أَمْسَيْنَا، وَبِكَ أَصْبَحْنَا، وَبِكَ نَحْيَا، وَبِكَ نَمُوتُ", e: "By You we enter evening...", c: 1 },
+            { t: "Sleep", a: "بِاسْمِكَ رَبِّي وَضَعْتُ جَنْبِي", e: "In Your name...", c: 1 },
+            { t: "Sleep", a: "اللَّهُمَّ قِنِي عَذَابَكَ يَوْمَ تَبْعَثُ عِبَادَكَ", e: "Protect me from punishment...", c: 3 },
+            { t: "General", a: "سُبْحَانَ اللَّهِ وَبِحَمْدِهِ سُبْحَانَ اللَّهِ الْعَظِيمِ", e: "Glory and praise...", c: 100 },
+            { t: "General", a: "لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ", e: "There is no power but with Allah...", c: 10 },
+            { t: "General", a: "أَسْتَغْفِرُ اللَّهَ وَأَتُوبُ إِلَيْهِ", e: "I seek forgiveness...", c: 100 }
+        ];
+
+        // STORIES DATA
+        const detailedStories = [
+            { name: "Prophet Muhammad (SAW)", story: "The Final Messenger of Allah. Born in Makkah in 570 CE, known as Al-Amin (The Trustworthy). At age 40, he received the first revelation in the Cave of Hira. He preached monotheism and social justice for 23 years, facing intense persecution in Makkah before the Hijrah to Madinah. He established a state built on mercy, equality, and divine law. He performed the Farewell Hajj and passed away in 632 CE, leaving behind the Quran and Sunnah as a guiding light for all mankind." },
+            { name: "Prophet Ibrahim (AS)", story: "Known as Khalil-ullah (The Friend of Allah). Ibrahim (AS) was born in a society of idol-worshippers and bravely challenged his own father and King Nimrod. He was miraculously saved from a massive fire. Along with his son Ismail (AS), he built the Kaaba in Makkah. His life was a series of ultimate tests—including leaving Hajar and Ismail in the desert and the command to sacrifice his son—all of which he passed with perfect faith (Tawakkul). Most of the Hajj rites are a commemoration of his family's sacrifices." },
+            { name: "Prophet Musa (AS)", story: "The Kalimullah (One who spoke to Allah). Born during the era when Pharaoh ordered the death of all male Hebrew children. He was raised in Pharaoh's palace but eventually fled to Madyan. Allah called him from the Burning Bush on Mount Sinai. He returned to Egypt with his brother Harun (AS) to liberate the Israelites. He performed 9 miracles, including the parting of the Red Sea. He received the Tawrat (Torah) and led his people through the wilderness of Sinai." },
+            { name: "Prophet Yusuf (AS)", story: "The Prophet of Resilience. His story is described in the Quran as the 'Best of Stories'. Betrayed by his brothers due to jealousy, sold as a slave in Egypt, and falsely imprisoned for years. Throughout his trials, he remained faithful and was eventually given the ability to interpret dreams. He rose to become the Treasurer of Egypt, managing the 7-year famine. He was ultimately reunited with his father Yaqub (AS) and forgave his brothers, demonstrating the power of Sabr and Taqwa." },
+            { name: "Prophet Adam (AS)", story: "The first human and first Prophet. Created from clay by Allah's own hands, given the knowledge of all things. Iblis refused to bow to him out of pride. Adam and Hawwa lived in Paradise but were sent to Earth after eating from the forbidden tree. His life teaches us the cycle of mistake, remorse, and sincere repentance. He is the father of all humanity and established the first worship of Allah on Earth." }
+        ];
+
+        // QUIZ DATA
+        const quizQuestions = [
+            { q: "In which month was the Quran first revealed?", o: ["Muharram", "Ramadan", "Shawwal", "Dhul-Hijjah"], a: 1 },
+            { q: "Who was the first person to accept Islam?", o: ["Abu Bakr", "Umar", "Khadijah", "Ali"], a: 2 },
             { q: "How many chapters (Surahs) are in the Quran?", o: ["110", "114", "120", "116"], a: 1 },
-            { q: "Which Prophet is mentioned most in the Quran?", o: ["Ibrahim", "Isa", "Musa", "Muhammad"], a: 2 },
-            { q: "What is the name of the cave where the Quran was first revealed?", o: ["Thawr", "Hira", "Uhud", "Safa"], a: 1 },
-            { q: "Which Surah is known as the 'Heart of the Quran'?", o: ["Al-Fatiha", "Yasin", "Ar-Rahman", "Al-Mulk"], a: 1 },
-            { q: "How many Sajdahs (prostrations) are in the Quran?", o: ["12", "14", "15", "10"], a: 1 },
-            { q: "Which Prophet could speak to animals and control wind?", o: ["Dawud", "Sulaiman", "Musa", "Yusuf"], a: 1 },
-            { q: "What is the pre-dawn meal before fasting called?", o: ["Iftar", "Suhoor", "Walima", "Zakat"], a: 1 },
-            { q: "In which year of the Hijra was fasting made obligatory?", o: ["1st", "2nd", "3rd", "5th"], a: 1 },
-            { q: "What is the name of the gate in Jannah for those who fast?", o: ["Ar-Rayyan", "Al-Kawthar", "Baab as-Salaat", "Baab al-Iman"], a: 0 },
-            { q: "Which battle took place during Ramadan in the 2nd year of Hijra?", o: ["Uhud", "Khandaq", "Badr", "Tabuk"], a: 2 },
-            { q: "How many months are in the Islamic calendar?", o: ["10", "12", "13", "11"], a: 1 },
-            { q: "Which angel is the gatekeeper of Hell?", o: ["Mikaeel", "Malik", "Ridwan", "Israfeel"], a: 1 },
-            { q: "Who was the first woman to embrace Islam?", o: ["Aisha", "Khadija", "Fatima", "Sawda"], a: 1 },
-            { q: "Which Prophet was swallowed by a large fish/whale?", o: ["Yunus", "Yusuf", "Idris", "Lut"], a: 0 },
+            { q: "What is the longest Surah in the Quran?", o: ["Al-Imran", "Al-Kahf", "Al-Baqarah", "Yasin"], a: 2 },
+            { q: "Which Prophet is known as the 'Friend of Allah'?", o: ["Musa", "Ibrahim", "Isa", "Adam"], a: 1 },
+            { q: "What is the name of the night the Quran was revealed?", o: ["Laylatul Buraq", "Laylatul Qadr", "Laylatul Isra", "Laylatul Miraj"], a: 1 },
+            { q: "Which Sahabi was known as 'As-Siddiq'?", o: ["Umar", "Uthman", "Ali", "Abu Bakr"], a: 3 },
             { q: "How many times a day do Muslims pray?", o: ["3", "4", "5", "6"], a: 2 },
+            { q: "In which city was the Prophet (SAW) born?", o: ["Madinah", "Jerusalem", "Makkah", "Taif"], a: 2 },
             { q: "What is the first month of the Islamic calendar?", o: ["Ramadan", "Muharram", "Safar", "Rajab"], a: 1 },
-            { q: "Which Surah is the longest in the Quran?", o: ["Al-Imran", "Al-Baqarah", "An-Nisa", "Al-Ma'idah"], a: 1 },
-            { q: "Which companion was nicknamed 'As-Siddiq'?", o: ["Umar", "Ali", "Abu Bakr", "Uthman"], a: 2 },
-            { q: "How many years did the Quran take to be fully revealed?", o: ["10", "23", "40", "13"], a: 1 },
-            { q: "Which Surah is equivalent to 1/3 of the Quran?", o: ["Al-Fatiha", "Al-Ikhlas", "Al-Falaq", "An-Nas"], a: 1 },
-            { q: "What is the direction of prayer called?", o: ["Mihrab", "Minbar", "Qibla", "Kaaba"], a: 2 },
-            { q: "Which Prophet was sent to the people of Thamud?", o: ["Salih", "Hud", "Shu'ayb", "Nuh"], a: 0 },
-            { q: "What is the name of the night the Quran was revealed?", o: ["Laylatul Qadr", "Laylatul Mi'raj", "Laylatul Bara'ah", "Eid Night"], a: 0 },
-            { q: "How many pillars of Islam are there?", o: ["3", "4", "5", "6"], a: 2 },
-            { q: "Who was the first Muezzin in Islam?", o: ["Abu Bakr", "Umar", "Bilal ibn Rabah", "Salman al-Farsi"], a: 2 },
-            { q: "Which city is known as the city of the Prophet?", o: ["Mecca", "Medina", "Jerusalem", "Taif"], a: 1 },
-            { q: "What is the special prayer during Ramadan nights?", o: ["Tahajjud", "Taraweeh", "Ishraq", "Witr"], a: 1 },
-            { q: "Which Prophet built the Ark?", o: ["Idris", "Ibrahim", "Nuh", "Musa"], a: 2 },
-            { q: "What is the Zakat given at the end of Ramadan called?", o: ["Zakat al-Maal", "Zakat al-Fitr", "Sadaqah", "Ushr"], a: 1 },
-            { q: "Which Prophet's name is mentioned only 4 times in the Quran?", o: ["Musa", "Isa", "Muhammad", "Ibrahim"], a: 2 },
-            { q: "What is the Arabic word for fasting?", o: ["Salat", "Sawm", "Hajj", "Zakat"], a: 1 },
-            { q: "Which companion is mentioned by name in the Quran?", o: ["Abu Bakr", "Umar", "Zaid bin Harithah", "Ali"], a: 2 },
-            { q: "Which Surah does not start with Bismillah?", o: ["An-Nisa", "At-Tawbah", "Al-Kahf", "Al-Baqarah"], a: 1 },
-            { q: "How many gates does Jannah have?", o: ["7", "8", "9", "10"], a: 1 },
-            { q: "How many gates does Hell have?", o: ["7", "8", "9", "6"], a: 0 },
-            { q: "Which Prophet was born without a father?", o: ["Musa", "Isa", "Yahya", "Zakariyya"], a: 1 },
-            { q: "What is the name of the sacred water in Mecca?", o: ["Kauthar", "Zamzam", "Salsabil", "Tasnim"], a: 1 },
-            { q: "Who will blow the trumpet on the Day of Judgment?", o: ["Jibril", "Mikaeel", "Israfeel", "Izraeel"], a: 2 },
-            { q: "Which metal is mentioned in the Quran as being sent down?", o: ["Gold", "Silver", "Iron", "Copper"], a: 2 },
-            { q: "What is the name of the mountain where Musa spoke to Allah?", o: ["Tur Sinai", "Arafat", "Safa", "Marwa"], a: 1 },
-            { q: "How many daughters did the Prophet (SAW) have?", o: ["1", "2", "3", "4"], a: 3 },
-            { q: "In which city is Al-Aqsa Mosque located?", o: ["Cairo", "Jerusalem", "Mecca", "Medina"], a: 1 },
-            { q: "What is the Arabic word for the oneness of Allah?", o: ["Taqwa", "Tawhid", "Ikhlas", "Iman"], a: 1 },
-            { q: "Which Prophet had a twin brother named Al-Ays?", o: ["Ismail", "Ishaq", "Yaqub", "Yusuf"], a: 2 },
-            { q: "What is the first word revealed in the Quran?", o: ["Allah", "Qul", "Iqra", "Subhan"], a: 2 },
-            { q: "Which Surah is called 'The Mother of the Book'?", o: ["Al-Baqarah", "Al-Ikhlas", "Al-Fatiha", "Al-Kahf"], a: 2 },
-            { q: "How many Takbirs are in the first Rakat of Eid prayer?", o: ["3", "5", "7", "6"], a: 2 },
-            { q: "Which Prophet was famous for his patience during illness?", o: ["Ayyub", "Yunus", "Zakariyya", "Yahya"], a: 0 },
-            { q: "What is the name of the scale used on Judgment Day?", o: ["Sirat", "Mizan", "Kauthar", "Arsh"], a: 1 },
-            { q: "Who is the gatekeeper of Jannah?", o: ["Malik", "Ridwan", "Jibril", "Mikaeel"], a: 1 }
+            { q: "Which angel brought the revelations to the Prophet (SAW)?", o: ["Mikail", "Israfil", "Jibril", "Malik"], a: 2 },
+            { q: "What is the direction of prayer called?", o: ["Minbar", "Qibla", "Mihrab", "Kaaba"], a: 1 },
+            { q: "Who built the Kaaba with Ibrahim (AS)?", o: ["Ismail (AS)", "Ishaq (AS)", "Yaqub (AS)", "Yusuf (AS)"], a: 0 },
+            { q: "How many Juz are in the Quran?", o: ["25", "30", "40", "50"], a: 1 },
+            { q: "What is the bridge over Hellfire called?", o: ["Siraat", "Barzakh", "Sidra", "Kawthar"], a: 0 },
+            { q: "Which Surah is known as the 'Heart of the Quran'?", o: ["Al-Mulk", "Ar-Rahman", "Yasin", "Al-Ikhlas"], a: 2 },
+            { q: "Which battle was the first major battle in Islam?", o: ["Uhud", "Badr", "Khandaq", "Khaybar"], a: 1 },
+            { q: "Who was the first Muezzin in Islam?", o: ["Bilal ibn Rabah", "Salman al-Farsi", "Abu Hurairah", "Zaid ibn Harithah"], a: 0 },
+            { q: "What is the literal meaning of 'Islam'?", o: ["Peace", "Submission", "Faith", "Light"], a: 1 },
+            { q: "Which Surah does not start with Bismillah?", o: ["An-Nisa", "Al-Maidah", "At-Tawbah", "Al-Anfal"], a: 2 },
+            { q: "How many pillars of Islam are there?", o: ["4", "5", "6", "7"], a: 1 },
+            { q: "What is the third pillar of Islam?", o: ["Salah", "Zakah", "Hajj", "Sawm"], a: 1 },
+            { q: "Which Prophet could talk to animals?", o: ["Sulaiman (AS)", "Daud (AS)", "Nuh (AS)", "Yahya (AS)"], a: 0 },
+            { q: "Which sea did Musa (AS) part?", o: ["Dead Sea", "Red Sea", "Mediterranean Sea", "Black Sea"], a: 1 },
+            { q: "Who was the father of Prophet Yusuf (AS)?", o: ["Ibrahim (AS)", "Ishaq (AS)", "Yaqub (AS)", "Lut (AS)"], a: 2 },
+            { q: "What is the well in Makkah called?", o: ["Tasneem", "Salsabil", "Zamzam", "Kawthar"], a: 2 },
+            { q: "Which day of the week is most blessed?", o: ["Monday", "Friday", "Saturday", "Sunday"], a: 1 },
+            { q: "What is the book given to Prophet Daud (AS)?", o: ["Injeel", "Tawrat", "Zabur", "Quran"], a: 2 },
+            { q: "How many daughters did Prophet Muhammad have?", o: ["2", "3", "4", "5"], a: 2 },
+            { q: "Which Prophet was swallowed by a whale?", o: ["Yunus (AS)", "Ayub (AS)", "Idris (AS)", "Harun (AS)"], a: 0 },
+            { q: "What is the penalty for missing a fast intentionally?", o: ["Sadaqah", "Kaffarah", "Qadha", "Nafil"], a: 1 },
+            { q: "Which Surah is called the 'Mother of the Book'?", o: ["Al-Ikhlas", "Al-Falaq", "Al-Fatihah", "An-Nas"], a: 2 },
+            { q: "In which year did the Hijrah take place?", o: ["610 CE", "622 CE", "630 CE", "632 CE"], a: 1 },
+            { q: "What is the entrance of Jannah for those who fast?", o: ["Rayyan", "Firdaus", "Adn", "Ma'wa"], a: 0 },
+            { q: "Who was the uncle of the Prophet (SAW) who protected him?", o: ["Abu Lahab", "Abu Talib", "Hamza", "Abbas"], a: 1 },
+            { q: "Which city is the Prophet's mosque in?", o: ["Makkah", "Madinah", "Jerusalem", "Taif"], a: 1 },
+            { q: "How many sons did the Prophet (SAW) have?", o: ["1", "2", "3", "4"], a: 2 },
+            { q: "What is the journey from Makkah to Jerusalem called?", o: ["Miraj", "Isra", "Hijrah", "Umrah"], a: 1 },
+            { q: "Which Prophet was born without a father?", o: ["Adam", "Isa", "Yahya", "Zakariyah"], a: 1 },
+            { q: "What is the first word of the Quran revealed?", o: ["Allah", "Islam", "Iqra", "Bismillah"], a: 2 },
+            { q: "How many times is 'Ramadan' mentioned in the Quran?", o: ["1", "2", "3", "5"], a: 0 },
+            { q: "Which Sahabi was known as the 'Sword of Allah'?", o: ["Khalid ibn Walid", "Ali ibn Abi Talib", "Sa'd ibn Abi Waqqas", "Hamza ibn Abdul-Muttalib"], a: 0 },
+            { q: "What is the meaning of 'Al-Amin'?", o: ["The Brave", "The Kind", "The Trustworthy", "The Wise"], a: 2 },
+            { q: "Which companion compiled the first Quran?", o: ["Umar", "Uthman", "Zaid ibn Thabit", "Abu Bakr"], a: 3 },
+            { q: "Which Surah is recited every Friday?", o: ["Al-Waqi'ah", "Al-Kahf", "Ar-Rahman", "Al-Mulk"], a: 1 },
+            { q: "What is the food for Breaking the Fast (Sunnah)?", o: ["Water", "Dates", "Milk", "Honey"], a: 1 },
+            { q: "How many years did the Prophet preach in Makkah?", o: ["10", "13", "20", "23"], a: 1 },
+            { q: "Who was the woman who built the first University?", o: ["Aisha", "Fatima al-Fihri", "Khadijah", "Sumayyah"], a: 1 },
+            { q: "What is the highest level of Jannah?", o: ["Adn", "Firdaus", "Na'im", "Khuld"], a: 1 },
+            { q: "Which Prophet is mentioned most in the Quran?", o: ["Muhammad", "Ibrahim", "Musa", "Isa"], a: 2 }
         ];
 
-        let count = 0; 
-        let qIdx = 0; 
-        let score = 0;
+        // TRACKER LOGIC
+        let journal = JSON.parse(localStorage.getItem('ramadan_journal') || '{"quran": 0, "salah": 0}');
+        let fasts = JSON.parse(localStorage.getItem('ramadan_fasts') || '[]');
 
-        function navigateTo(pageId) {
-            document.querySelectorAll('.page-section').forEach(p => p.classList.add('hidden'));
-            document.getElementById('page-' + pageId).classList.remove('hidden');
-            document.querySelectorAll('.nav-btn').forEach(b => {
-                b.classList.remove('active', 'text-emerald-900');
-                b.classList.add('text-slate-400');
-            });
-            const activeBtn = Array.from(document.querySelectorAll('.nav-btn')).find(b => b.getAttribute('onclick').includes(pageId));
-            if(activeBtn) {
-                activeBtn.classList.add('active', 'text-emerald-900');
-                activeBtn.classList.remove('text-slate-400');
-            }
-            window.scrollTo(0, 0);
-        }
-
-        function populateUI() {
-            const namesG = document.getElementById('names-grid');
-            namesG.innerHTML = '';
-            names99.forEach((n, idx) => {
-                namesG.innerHTML += `
-                    <div class="glass-card p-4 rounded-xl text-center border-b-2 border-emerald-100">
-                        <span class="text-[10px] text-emerald-400 font-bold">#${idx + 1}</span>
-                        <h4 class="arabic-text text-xl font-bold text-emerald-800 my-1">${n.a}</h4>
-                        <p class="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">${n.e}</p>
-                    </div>`;
-            });
-
-            const adhkL = document.getElementById('adhkar-list');
-            adhkL.innerHTML = '';
-            adhkarData.forEach(a => {
-                adhkL.innerHTML += `
-                    <div class="glass-card p-5 rounded-2xl space-y-2 border-l-4 border-emerald-500">
-                        <div class="flex justify-between items-start">
-                            <span class="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">${a.e}</span>
-                        </div>
-                        <p class="arabic-text text-2xl text-emerald-900 font-bold leading-loose">${a.a}</p>
-                        <p class="text-xs font-medium text-slate-500">${a.m}</p>
-                    </div>`;
-            });
-
-            const storyL = document.getElementById('stories-list');
-            storyL.innerHTML = '';
-            storiesData.forEach(s => {
-                storyL.innerHTML += `
-                    <div class="glass-card p-5 rounded-2xl border-l-4 border-blue-500">
-                        <h4 class="font-bold text-slate-800">${s.t}</h4>
-                        <p class="text-xs text-slate-500 mt-2 leading-relaxed">${s.c}</p>
-                    </div>`;
-            });
-
-            const prayL = document.getElementById('prayers-list');
-            prayL.innerHTML = '';
-            prayersData.forEach(p => {
-                prayL.innerHTML += `
-                    <div class="glass-card p-5 rounded-2xl space-y-3 border-l-4 border-red-500">
-                        <h4 class="font-bold text-slate-800">${p.t}</h4>
-                        <p class="arabic-text text-xl text-emerald-900 font-bold leading-relaxed">${p.a}</p>
-                        <p class="text-[10px] italic text-slate-400">${p.e}</p>
-                        <p class="text-xs font-medium text-slate-600 bg-slate-50 p-3 rounded-lg">${p.m}</p>
-                    </div>`;
-            });
-        }
-
-        async function askGemini() {
-            const input = document.getElementById('ai-input');
-            const resDiv = document.getElementById('ai-response');
-            const query = input.value.trim();
-            if (!query) return;
-
-            document.getElementById('btn-text').classList.add('hidden');
-            document.getElementById('btn-loader').classList.remove('hidden');
-            resDiv.classList.remove('hidden');
-            resDiv.innerText = "Connecting with Counselor...";
-
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
-            const payload = {
-                contents: [{ parts: [{ text: query }] }],
-                systemInstruction: { parts: [{ text: "You are a kind, wise Islamic spiritual counselor. Provide authentic, encouraging, and brief responses based on Quran and Sunnah. Start with a warm greeting." }] }
-            };
-
-            const fetchWithRetry = async (retries = 5) => {
-                const delays = [1000, 2000, 4000, 8000, 16000];
-                for (let i = 0; i <= retries; i++) {
-                    try {
-                        const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                        if (response.ok) {
-                            const data = await response.json();
-                            return data.candidates?.[0]?.content?.parts?.[0]?.text;
-                        }
-                        if (i === retries) throw new Error("Connection failed");
-                        await new Promise(r => setTimeout(r, delays[i]));
-                    } catch (err) { if (i === retries) throw err; await new Promise(r => setTimeout(r, delays[i])); }
-                }
-            };
-
-            try {
-                const result = await fetchWithRetry();
-                resDiv.innerText = result || "Counselor is currently reflecting. Please try again.";
-            } catch (err) {
-                resDiv.innerText = "Peace be upon you. The counselor is unavailable right now. Please try again in a few moments.";
-            } finally {
-                document.getElementById('btn-text').classList.remove('hidden');
-                document.getElementById('btn-loader').classList.add('hidden');
-            }
-        }
-
-        function newQuote() {
-            const q = quotes[Math.floor(Math.random() * quotes.length)];
-            document.getElementById('quote-display').innerText = `"${q}"`;
-        }
-
-        function incrementTasbeeh() {
-            count++;
-            document.getElementById('tasbeeh-count').innerText = count;
-        }
-
-        function resetTasbeeh() {
-            count = 0;
-            document.getElementById('tasbeeh-count').innerText = 0;
-        }
-
-        function startQuiz() {
-            document.getElementById('quiz-intro').classList.add('hidden');
-            document.getElementById('quiz-game').classList.remove('hidden');
-            document.getElementById('quiz-result').classList.add('hidden');
-            qIdx = 0; score = 0; showQuestion();
-        }
-
-        function showQuestion() {
-            const q = fullQuizData[qIdx];
-            document.getElementById('quiz-progress-text').innerText = `Question ${qIdx + 1}/50`;
-            document.getElementById('quiz-score-live').innerText = `Score: ${score}`;
-            document.getElementById('quiz-question').innerText = q.q;
-            const optionsDiv = document.getElementById('quiz-options');
-            optionsDiv.innerHTML = '';
-            q.o.forEach((opt, idx) => {
-                const btn = document.createElement('button');
-                btn.className = "p-4 text-left border border-slate-200 rounded-xl hover:bg-indigo-50 hover:border-indigo-200 font-medium transition-all active:scale-[0.98]";
-                btn.innerText = opt;
-                btn.onclick = () => handleAnswer(idx);
-                optionsDiv.appendChild(btn);
-            });
-        }
-
-        function handleAnswer(idx) {
-            if (idx === fullQuizData[qIdx].a) score++;
-            qIdx++;
-            if (qIdx < fullQuizData.length) showQuestion();
-            else showQuizResult();
-        }
-
-        function showQuizResult() {
-            document.getElementById('quiz-game').classList.add('hidden');
-            document.getElementById('quiz-result').classList.remove('hidden');
-            document.getElementById('final-score').innerText = `${score}/50`;
-        }
-
-        function shareToWhatsApp(type) {
-            let text = "";
-            if(type === 'wisdom') {
-                text = `🌙 *Ramadan 360 Daily Wisdom*:\n\n${document.getElementById('quote-display').innerText}\n\nJoin me in this blessed month!`;
-            } else {
-                text = `🏆 *Ramadan 360 Quiz Score*:\n\nI just finished the 50-question Islamic Quiz and scored *${score}/50*! \n\nCan you beat my score? Download Ramadan 360 now! 🌙`;
-            }
-            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+        function updateJournal(type, val) {
+            journal[type] = Math.max(0, journal[type] + val);
+            if(type === 'salah') journal[type] = Math.min(5, journal[type]);
+            document.getElementById(`${type}-count`).innerText = type === 'salah' ? `${journal[type]}/5` : journal[type];
+            localStorage.setItem('ramadan_journal', JSON.stringify(journal));
         }
 
         function renderTracker() {
             const grid = document.getElementById('days-grid');
-            const data = JSON.parse(localStorage.getItem('fast_track_v4') || '{}');
-            let completed = 0; grid.innerHTML = '';
+            if(!grid) return;
+            grid.innerHTML = '';
             for(let i=1; i<=30; i++) {
-                if(data[i]) completed++;
-                const d = document.createElement('div');
-                d.className = `h-10 flex items-center justify-center rounded-lg font-bold border cursor-pointer transition-all ${data[i] ? 'bg-amber-400 text-white border-amber-500 scale-105' : 'bg-white text-slate-400 hover:bg-slate-50'}`;
-                d.innerText = i; 
-                d.onclick = () => { 
-                    data[i] = !data[i]; 
-                    localStorage.setItem('fast_track_v4', JSON.stringify(data)); 
-                    renderTracker(); 
-                };
-                grid.appendChild(d);
+                const isDone = fasts.includes(i);
+                grid.innerHTML += `
+                    <div onclick="toggleFast(${i})" class="aspect-square flex flex-col items-center justify-center rounded-xl text-[10px] font-bold cursor-pointer transition-all border ${isDone ? 'bg-emerald-700 text-white border-emerald-800' : 'bg-white text-slate-400 border-slate-100'}">
+                        <span>DAY</span>
+                        <span class="text-sm">${i}</span>
+                    </div>`;
             }
-            document.getElementById('tracker-stats').innerText = `${completed}/30 Days`;
-            document.getElementById('tracker-bar').style.width = `${(completed/30)*100}%`;
+            const progress = (fasts.length / 30) * 100;
+            document.getElementById('tracker-bar').style.width = `${progress}%`;
+            document.getElementById('tracker-stats').innerText = `${fasts.length}/30 Days`;
+        }
+
+        function toggleFast(day) {
+            const idx = fasts.indexOf(day);
+            if(idx > -1) fasts.splice(idx, 1); else fasts.push(day);
+            localStorage.setItem('ramadan_fasts', JSON.stringify(fasts));
+            renderTracker();
+        }
+
+        // QUIZ ENGINE
+        let currentQuestion = 0;
+        let score = 0;
+
+        function startQuiz() {
+            currentQuestion = 0;
+            score = 0;
+            const intro = document.getElementById('quiz-intro');
+            const result = document.getElementById('quiz-result');
+            const game = document.getElementById('quiz-game');
+            
+            if (intro) intro.classList.add('hidden');
+            if (result) result.classList.add('hidden');
+            if (game) game.classList.remove('hidden');
+            
+            showQuestion();
+        }
+
+        function showQuestion() {
+            const q = quizQuestions[currentQuestion];
+            const progText = document.getElementById('quiz-progress-text');
+            const liveScore = document.getElementById('quiz-score-live');
+            const questionEl = document.getElementById('quiz-question');
+            const optionsDiv = document.getElementById('quiz-options');
+
+            if (progText) progText.innerText = `Question ${currentQuestion + 1}/50`;
+            if (liveScore) liveScore.innerText = `Score: ${score}`;
+            if (questionEl) questionEl.innerText = q.q;
+            
+            if (optionsDiv) {
+                optionsDiv.innerHTML = '';
+                q.o.forEach((opt, idx) => {
+                    const btn = document.createElement('button');
+                    btn.className = "w-full p-4 text-left rounded-2xl bg-white border border-slate-100 font-medium active:bg-indigo-50 transition-colors";
+                    btn.innerText = opt;
+                    btn.onclick = () => handleAnswer(idx);
+                    optionsDiv.appendChild(btn);
+                });
+            }
+        }
+
+        function handleAnswer(choice) {
+            if(choice === quizQuestions[currentQuestion].a) {
+                score++;
+            }
+            
+            currentQuestion++;
+            if(currentQuestion < quizQuestions.length) {
+                showQuestion();
+            } else {
+                endQuiz();
+            }
+        }
+
+        function endQuiz() {
+            const game = document.getElementById('quiz-game');
+            const result = document.getElementById('quiz-result');
+            const finalScore = document.getElementById('quiz-final-score');
+
+            if (game) game.classList.add('hidden');
+            if (result) result.classList.remove('hidden');
+            if (finalScore) finalScore.innerText = `${score}/50`;
+        }
+
+        // APP NAVIGATION
+        function navigateTo(pageId) {
+            document.querySelectorAll('.page-section').forEach(p => p.classList.add('hidden'));
+            const targetPage = document.getElementById('page-' + pageId);
+            if (targetPage) targetPage.classList.remove('hidden');
+            
+            document.querySelectorAll('.nav-btn').forEach(b => {
+                b.classList.remove('active', 'text-emerald-900');
+                b.classList.add('text-slate-400');
+            });
+
+            // Find matching button by its onclick attribute string
+            const activeBtn = Array.from(document.querySelectorAll('.nav-btn')).find(b => {
+                const clickAttr = b.getAttribute('onclick');
+                return clickAttr && clickAttr.includes(`MapsTo('${pageId}')`);
+            });
+
+            if(activeBtn) { 
+                activeBtn.classList.add('active', 'text-emerald-900'); 
+                activeBtn.classList.remove('text-slate-400'); 
+            }
+            window.scrollTo(0, 0);
+        }
+
+        // CONTENT RENDERING
+        function populateContent() {
+            // Names of Allah
+            const namesGrid = document.getElementById('names-grid');
+            if(namesGrid) {
+                namesGrid.innerHTML = namesOfAllah.map((n, i) => `
+                    <div class="glass-card p-4 rounded-2xl text-center border-t-2 border-emerald-500">
+                        <div class="text-[10px] font-bold text-emerald-300 mb-1">#${i+1}</div>
+                        <div class="arabic-text text-xl font-bold text-emerald-900 mb-1">${n.a}</div>
+                        <div class="text-[10px] font-bold text-slate-400 uppercase">${n.e}</div>
+                        <div class="text-[9px] text-emerald-600 font-medium">${n.m}</div>
+                    </div>
+                `).join('');
+            }
+
+            // Stories
+            const storiesList = document.getElementById('stories-list');
+            if(storiesList) {
+                storiesList.innerHTML = detailedStories.map(s => `
+                    <div class="glass-card p-6 rounded-3xl border-l-4 border-blue-500">
+                        <h3 class="font-bold text-slate-800 mb-3 text-lg">${s.name}</h3>
+                        <p class="text-xs text-slate-600 leading-relaxed text-justify">${s.story}</p>
+                    </div>
+                `).join('');
+            }
+
+            // Adhkar
+            filterAdhkar('Morning');
+            
+            // Goals
+            renderGoals();
+            
+            // Tracker
+            renderTracker();
+            const quranCount = document.getElementById('quran-count');
+            const salahCount = document.getElementById('salah-count');
+            if (quranCount) quranCount.innerText = journal.quran;
+            if (salahCount) salahCount.innerText = `${journal.salah}/5`;
+        }
+
+        // ADHKAR FILTER
+        function filterAdhkar(category) {
+            const list = document.getElementById('adhkar-list');
+            if(!list) return;
+            const items = adhkarData.filter(a => a.t === category);
+            list.innerHTML = items.map(a => `
+                <div class="glass-card p-5 rounded-2xl border-l-4 border-emerald-400">
+                    <div class="arabic-text text-xl leading-loose text-right text-emerald-900 mb-2">${a.a}</div>
+                    <div class="text-xs text-slate-500 italic mb-2">${a.e}</div>
+                    <div class="text-[10px] font-bold text-emerald-700">Recite: ${a.c}x</div>
+                </div>
+            `).join('');
+            ['Morning', 'Evening', 'Sleep', 'General'].forEach(t => {
+                const btn = document.getElementById('tab-' + t);
+                if(btn) {
+                    if(t === category) { 
+                        btn.classList.replace('bg-emerald-100', 'bg-emerald-800'); 
+                        btn.classList.replace('text-emerald-800', 'text-white'); 
+                    } else { 
+                        btn.classList.replace('bg-emerald-800', 'bg-emerald-100'); 
+                        btn.classList.replace('text-white', 'text-emerald-800'); 
+                    }
+                }
+            });
+        }
+
+        // GOALS
+        let goals = JSON.parse(localStorage.getItem('ramadan_goals') || '[]');
+        function renderGoals() {
+            const container = document.getElementById('goals-container');
+            if(!container) return;
+            container.innerHTML = '';
+            let done = 0;
+            goals.forEach((g, i) => {
+                if(g.done) done++;
+                container.innerHTML += `
+                    <div class="flex items-center gap-3 bg-white p-3 rounded-xl border border-emerald-50">
+                        <div onclick="toggleGoal(${i})" class="checkbox-custom ${g.done ? 'checked' : ''}"></div>
+                        <span class="text-sm flex-1 ${g.done ? 'line-through text-slate-400' : ''}">${g.text}</span>
+                        <button onclick="removeGoal(${i})" class="text-slate-300"><i class="fas fa-times"></i></button>
+                    </div>`;
+            });
+            const goalCount = document.getElementById('goal-count');
+            if (goalCount) goalCount.innerText = `${done}/${goals.length}`;
+            localStorage.setItem('ramadan_goals', JSON.stringify(goals));
+        }
+        function toggleGoal(i) { goals[i].done = !goals[i].done; renderGoals(); }
+        function removeGoal(i) { goals.splice(i, 1); renderGoals(); }
+        function addGoal() { 
+            const input = document.getElementById('goal-input');
+            if(input && input.value) { 
+                goals.push({text: input.value, done: false}); 
+                input.value = ''; 
+                renderGoals(); 
+            }
+        }
+
+        // TASBEEH
+        let tasbeeh = 0;
+        function incrementTasbeeh() { 
+            tasbeeh++; 
+            const el = document.getElementById('tasbeeh-count');
+            if (el) el.innerText = tasbeeh; 
+        }
+        function resetTasbeeh() { 
+            tasbeeh = 0; 
+            const el = document.getElementById('tasbeeh-count');
+            if (el) el.innerText = 0; 
+        }
+
+        // QUOTES LOGIC (Updated for 30 quotes)
+        function newQuote() { 
+            const el = document.getElementById('quote-display');
+            if (el) {
+                const randomQuote = spiritualQuotes[Math.floor(Math.random() * spiritualQuotes.length)];
+                el.innerText = `"${randomQuote}"`; 
+            }
+        }
+
+        function shareQuote() {
+            const quote = document.getElementById('quote-display').innerText;
+            const text = encodeURIComponent(`Spiritual Wisdom of the Day:\n\n${quote}\n\nShared from Ramadan 360 Ultimate App ✨`);
+            window.open(`https://wa.me/?text=${text}`, '_blank');
+        }
+
+        function downloadQuote() {
+            const quote = document.getElementById('quote-display').innerText;
+            const blob = new Blob([quote], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'spiritual_wisdom.txt';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
         }
 
         window.onload = () => {
-            populateUI();
-            renderTracker();
-            setInterval(() => {
-                document.getElementById('live-time').innerText = new Date().toLocaleTimeString();
+            populateContent();
+            newQuote();
+            setInterval(() => { 
+                const lt = document.getElementById('live-time');
+                if(lt) lt.innerText = new Date().toLocaleTimeString(); 
             }, 1000);
         };
     </script>
